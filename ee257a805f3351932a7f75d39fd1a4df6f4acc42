@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_7765ab43",
+        "filename": "Bullet.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "define this",
+      "range": {
+        "startLine": 28,
+        "startChar": 19,
+        "endLine": 28,
+        "endChar": 22
+      },
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f7ff7b32",
+        "filename": "EnemyTank.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "this part look strange in a way. why not to use if-else?",
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b790d3ed",
+        "filename": "Main.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "You can create one mote class to move a big piece of code from here. This will be much better than 1000 lines of code in Main class.",
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f7ad3b32",
+        "filename": "Main.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "not clear names",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 21
+      },
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_97638f1a",
+        "filename": "Main.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "add more logical spaces",
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_d7811791",
+        "filename": "Main.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "braces",
+      "range": {
+        "startLine": 329,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 30
+      },
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b77e93ac",
+        "filename": "Main.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "playFieldLayer",
+      "range": {
+        "startLine": 400,
+        "startChar": 42,
+        "endLine": 400,
+        "endChar": 56
+      },
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f23789e1",
+        "filename": "Settings.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-04-13T10:45:06Z",
+      "side": 1,
+      "message": "It\u0027s better not to use public variables, but private and \"gets ans sets\" methods.",
+      "revId": "ee257a805f3351932a7f75d39fd1a4df6f4acc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
