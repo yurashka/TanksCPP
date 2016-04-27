@@ -3,12 +3,13 @@ package tanks;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 
+import java.io.Serializable;
 import java.util.Random;
 
 /**
  * Created by yurashka on 14.03.2016.
  */
-public class EnemyTank extends SpriteBase {
+public class EnemyTank extends SpriteBase implements Serializable {
 
     double EnemyShipMinX;
     double EnemyShipMaxX;
@@ -19,7 +20,8 @@ public class EnemyTank extends SpriteBase {
     double movementChangeDirection = movementChangeTime; // initially the cannon is charged
     double movementChangeDirectionDelta = 1; // counter is increased by this value each frame
 
-    public EnemyTank(Pane layer, Image image, double x, double y, double direction, double dx, double dy, double directionOffset, double health, double damage) {
+    public EnemyTank(Pane layer, Image image, double x, double y, double direction, double dx,
+        double dy, double directionOffset, double health, double damage) {
         super(layer, image, x, y, direction, dx, dy, directionOffset, health, damage);
     }
 
@@ -31,38 +33,33 @@ public class EnemyTank extends SpriteBase {
         if (!this.isAlive())
             setRemovable(true);
 
-            //check up/down left/right
+        //check up/down left/right
         if (Double.compare(getY(), Settings.SCENE_HEIGHT) > 0 || (Double.compare(getY(), 0) < 0)) {
-            if (Double.compare(getX(),Settings.SCENE_WIDTH ) >0  || (Double.compare(getX(),0 ) <0)) {
+            if (Double.compare(getX(), Settings.SCENE_WIDTH) > 0 || (Double.compare(getX(), 0)
+                < 0)) {
                 setRemovable(true);
             }
         }
-
-//        if ((Double.compare(getY(), Settings.SCENE_HEIGHT) > 0 && this.canMove)||(Double.compare(getY(), 0) < 0 || this.canMove)) {
-//            //dy=-dy;
-//        }
-//        else
-//            setRemovable(true);
-
     }
+
     /**
      * move object
      */
     public void move() {
 
 
-        if( !canMove)
+        if (!canMove)
             return;
         x += dx;
         y += dy;
-       if (this.changeDirection()) {
+        if (this.changeDirection()) {
             Random rnd = new Random();
             int R = rnd.nextInt(12);
             switch (R) {
                 case 1:
                 case 2:
                 case 3:
-                   this.moveLeft();
+                    this.moveLeft();
                     break;
                 case 4:
                 case 5:
@@ -85,14 +82,14 @@ public class EnemyTank extends SpriteBase {
             }
             this.unchargeChangeMOvement();
         }
-        if (Double.compare( dy,0) <0)
-            direction=0;
-        if  (Double.compare( dy,0) >0)
-            direction=180;
-        if (Double.compare(dx,0) <0)
-            direction=-90;
-        if (Double.compare(dx,0) >0)
-            direction=90;
+        if (Double.compare(dy, 0) < 0)
+            direction = 0;
+        if (Double.compare(dy, 0) > 0)
+            direction = 180;
+        if (Double.compare(dx, 0) < 0)
+            direction = -90;
+        if (Double.compare(dx, 0) > 0)
+            direction = 90;
         if (!this.canMoveRight)
             this.moveLeft();
         if (!this.canMoveLeft)
@@ -105,6 +102,7 @@ public class EnemyTank extends SpriteBase {
 
         checkBounds();
     }
+
     /**
      * change Direction
      */
@@ -115,6 +113,7 @@ public class EnemyTank extends SpriteBase {
         return changeDirection;
 
     }
+
     /**
      * charge Direction change
      */
@@ -123,11 +122,12 @@ public class EnemyTank extends SpriteBase {
         // ---------------------------
         // charge weapon: increase a counter by some delta. once it reaches a limit, the weapon is considered charged
         movementChangeDirection += movementChangeDirectionDelta;
-        if( movementChangeDirection > movementChangeTime) {
+        if (movementChangeDirection > movementChangeTime) {
             movementChangeDirection = movementChangeTime;
         }
 
     }
+
     /**
      * uncharge Direction change
      */
@@ -143,25 +143,27 @@ public class EnemyTank extends SpriteBase {
      */
     private void checkBounds() {
         //vertical
-        if (Double.compare( dy, 0) > 0 || Double.compare( dy, 0) < 0 ){
-        if( (Double.compare( y, Settings.SCENE_HEIGHT) < 0) && (Double.compare( y, 0) > 0)) {
-            return;
+        if (Double.compare(dy, 0) > 0 || Double.compare(dy, 0) < 0) {
+            if ((Double.compare(y, Settings.SCENE_HEIGHT) < 0) && (Double.compare(y, 0) > 0)) {
+                return;
+            }
+            if ((Double.compare(y, Settings.SCENE_HEIGHT) >= 0) && (Double.compare(dy, 0) > 0)) {
+                dy = -Settings.playerShipSpeed;
+                return;
+            }
+            if ((Double.compare(y, 0) < 0) && (Double.compare(dy, 0) < 0)) {
+                dy = Settings.playerShipSpeed;
+                return;
+            }
         }
-        if( (Double.compare( y, Settings.SCENE_HEIGHT) >= 0) && (Double.compare( dy, 0) > 0)) {
-            dy=-Settings.playerShipSpeed;
-            return;
-        }
-        if( (Double.compare( y, 0) < 0) && (Double.compare( dy, 0) < 0)) {
-            dy=Settings.playerShipSpeed;
-            return;
-        }}
 
         //horisontal
-        if (Double.compare( dx, 0) > 0 || Double.compare( dx, 0) < 0) {
+        if (Double.compare(dx, 0) > 0 || Double.compare(dx, 0) < 0) {
             if ((Double.compare(x, Settings.SCENE_WIDTH) < 0) && (Double.compare(x, 0) > 0)) {
                 return;
             }
-            if ((Double.compare(x, Settings.SCENE_WIDTH - 40) >= 0) && (Double.compare(dx, 0) > 0)) {
+            if ((Double.compare(x, Settings.SCENE_WIDTH - 40) >= 0) && (Double.compare(dx, 0)
+                > 0)) {
                 dx = -Settings.playerShipSpeed;
                 return;
             }

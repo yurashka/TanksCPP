@@ -3,12 +3,14 @@ package tanks;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 
+
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by yurashka on 28.03.2016.
  */
-public class Missile extends SpriteBase {
+public class Missile extends SpriteBase implements Serializable {
 
 
     SpriteBase target;

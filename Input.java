@@ -3,6 +3,7 @@ package tanks;
 /**
  * Created by yurashka on 14.03.2016.
  */
+import java.io.Serializable;
 import java.util.BitSet;
 
 import javafx.event.EventHandler;
@@ -71,7 +72,7 @@ rightKey=k;
 secondaryWeaponKey=k;
     }
 
-    Scene scene;
+    transient Scene scene;
     /**
      * Bing scene and input
      */
@@ -100,7 +101,7 @@ secondaryWeaponKey=k;
     /**
      * "Key Pressed" handler for all input events: register pressed key in the bitset
      */
-    private EventHandler<KeyEvent> keyPressedEventHandler = new EventHandler<KeyEvent>() {
+    transient private EventHandler<KeyEvent> keyPressedEventHandler = new EventHandler<KeyEvent>() {
         @Override
         public void handle(KeyEvent event) {
 
@@ -114,7 +115,7 @@ secondaryWeaponKey=k;
      * "Key Released" handler for all input events: unregister released key in the bitset
      *
      * */
-    private EventHandler<KeyEvent> keyReleasedEventHandler = new EventHandler<KeyEvent>() {
+    transient private EventHandler<KeyEvent> keyReleasedEventHandler = new EventHandler<KeyEvent>() {
         @Override
         public void handle(KeyEvent event) {
             // register key up

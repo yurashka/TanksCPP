@@ -12,6 +12,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.AudioClip;
@@ -22,10 +24,8 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.io.*;
+import java.util.*;
 
 public class Main extends Application {
     Random randomValue = new Random();
@@ -46,6 +46,9 @@ public class Main extends Application {
     List<Bullet> player2bullets = new ArrayList<>();
     List<Bullet> bullets = new ArrayList<>();
     List<Missile> playerMissileList = new ArrayList<>();
+
+    List<Object> gameState = new ArrayList<>();
+
     AudioClip audio;
     AudioClip audio1;
     AudioClip audio2;
@@ -87,8 +90,7 @@ public class Main extends Application {
     @Override
     /**
      * start timer for game
-     */
-    public void start(Stage primaryStage) throws Exception {
+     */ public void start(Stage primaryStage) throws Exception {
         primaryStage.addEventFilter(KeyEvent.KEY_RELEASED, globalKeyEventHandler);
         StackPane menu = new StackPane();
         mainMenu = new Scene(menu, 300, 300);
@@ -99,7 +101,9 @@ public class Main extends Application {
         Button btnDifHard = new Button("Hard players:1");
         Button btnBack = new Button("back");
         Button btnAuto = new Button("Auto");
-        difficulty.getChildren().addAll(btnDifEasy, btnDifNormal, btnDifHard, btnBack, btnAuto);
+        Button btnRepeat = new Button("repeat");
+        difficulty.getChildren()
+            .addAll(btnDifEasy, btnDifNormal, btnDifHard, btnBack, btnAuto, btnRepeat);
         btnDifEasy.setOnAction(e -> {
             stopGame();
             primaryStage.setScene(scene);
@@ -127,35 +131,42 @@ public class Main extends Application {
             startGame();
         });
         btnBack.setOnAction(e -> {
-                    primaryStage.setScene(mainMenu);
-                    for (Player player : players)
-                        player.updateUI();
-                    for (EnemyTank enemy : enemies)
-                        enemy.updateUI();
-                    for (Bullet bullet : bullets)
-                        bullet.updateUI();
-                    players.remove(true);
-                    enemies.remove(true);
-                    bullets.remove(true);
-                    for (Player player : players)
-                        player.updateUI();
-                    for (EnemyTank enemy : enemies)
-                        enemy.updateUI();
-                    for (Bullet bullet : bullets)
-                        bullet.updateUI();
-                    stopGame();
-                }
-        );
+            primaryStage.setScene(mainMenu);
+            for (Player player : players)
+                player.updateUI();
+            for (EnemyTank enemy : enemies)
+                enemy.updateUI();
+            for (Bullet bullet : bullets)
+                bullet.updateUI();
+            players.remove(true);
+            enemies.remove(true);
+            bullets.remove(true);
+            for (Player player : players)
+                player.updateUI();
+            for (EnemyTank enemy : enemies)
+                enemy.updateUI();
+            for (Bullet bullet : bullets)
+                bullet.updateUI();
+            Settings.repeat = false;
+            stopGame();
+        });
         btnAuto.setOnAction(e -> {
-            Settings.automove = true;
             stopGame();
             Settings.playerShipSpeed = 3.0;
             Settings.playerShipHealth = 300;
             Settings.enemy = 36;
             primaryStage.setScene(scene);
             loadGame();
+            Settings.automove = true;
             startGame();
         });
+        btnRepeat.setOnAction(e -> {
+            Settings.repeat = true;
+            primaryStage.setScene(scene);
+            //loadGame();
+            startGame();
+        });
+        btnRepeat.setTranslateX(-80);
         btnDifEasy.setTranslateY(-40);
         btnDifNormal.setTranslateY(0);
         btnDifHard.setTranslateY(40);
@@ -178,6 +189,11 @@ public class Main extends Application {
             debugLayer.setVisible(false);
         });
         btnMenu.setOnAction(e -> {
+            if (!Settings.repeat && !Settings.automove)
+                Utils.save(gameState);
+            Settings.repeat = false;
+            Settings.saveFirstTime = true;
+            gameState.clear();
             stopGame();
             debugLayer.setVisible(false);
             gameLoop.stop();
@@ -212,111 +228,174 @@ public class Main extends Application {
         loadGame();
         createScoreLayer();
         gameLoop = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                createPlayers();
-                // player input
-                for (Player player : players) {
-                    if (Settings.automove) {
-                        {
-                            if (player.getPlayerNumber() == 2) {
-                                player.processInput();
-                                player.move();
-                                continue;
+            @Override public void handle(long now) {
+                if (Settings.repeat) {
+                    Player1Score.setText("START REPEAT");
+                    try {
+                        gameState = loadRepeat(gameState);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    ThreadForReplay replay = new ThreadForReplay(gameState);
+                    replay.start();
+
+                    Settings.repeat = false;
+                    pauseGame();
+
+                    //TODO : "HERE IS LOAD REPEAT
+                } else {
+
+                    createPlayers();
+                    // player input
+                    for (Player player : players) {
+                        if (Settings.automove) {
+                            {
+                                if (player.getPlayerNumber() == 2) {
+                                    player.processInput();
+                                    player.move();
+                                    continue;
+                                }
+                                player.findTarget(enemies);
+                                player.autoMove();
+                                if (!noEnemiesOnLine(player, enemies))
+                                    spawnBullet(player, player1bullets);
+                                if (noEnemiesOnLine(player, enemies))
+                                    spawnSecondaryWeaponObjects(player);
                             }
-                            player.findTarget(enemies);
-                            player.autoMove();
-                            if (!noEnemiesOnLine(player, enemies))
-                                spawnBullet(player, player1bullets);
-                            if (noEnemiesOnLine(player, enemies))
-                                spawnSecondaryWeaponObjects(player);
+                        } else
+                            player.processInput();
+                        player.move();
+                    }
+                    for (Player player : players) {
+                        player.chargePrimaryWeapon();
+                    }
+                    for (Player player : players) {
+                        if (Settings.player1IsAlive && player.isFirePrimaryWeapon()
+                            && player.getPlayerNumber() == 1) {
+                            audio.play();
+                            spawnBullet(player, player1bullets);
+                            player.unchargePrimaryWeapon();
                         }
-                    } else
-                        player.processInput();
-                    player.move();
-                }
-                for (Player player : players) {
-                    player.chargePrimaryWeapon();
-                }
-                for (Player player : players) {
-                    if (Settings.player1IsAlive && player.isFirePrimaryWeapon() && player.getPlayerNumber() == 1) {
-                        audio.play();
-                        spawnBullet(player, player1bullets);
-                        player.unchargePrimaryWeapon();
+                        if (Settings.player2IsAlive && player.isFirePrimaryWeapon()
+                            && player.getPlayerNumber() == 2) {
+                            audio.play();
+                            spawnBullet(player, player2bullets);
+                            player.unchargePrimaryWeapon();
+                        }
                     }
-                    if (Settings.player2IsAlive && player.isFirePrimaryWeapon() && player.getPlayerNumber() == 2) {
-                        audio.play();
-                        spawnBullet(player, player2bullets);
-                        player.unchargePrimaryWeapon();
+                    //for missile found targets
+                    for (Missile missile : playerMissileList) {
+                        missile.findTarget(enemies);
                     }
-                }
-                //for missile found targets
-                for (Missile missile : playerMissileList) {
-                    missile.findTarget(enemies);
-                }
-                for (Player player : players) {
-                    spawnSecondaryWeaponObjects(player);
-                }
-                playerMissileList.forEach(sprite -> sprite.move());
-                playerMissileList.forEach(sprite -> sprite.updateUI());
-                playerMissileList.forEach(sprite -> sprite.checkRemovability());
-                removeSprites(playerMissileList);
-                // add random enemies
-                if (Settings.enemyTotal < Settings.enemy && enemies.size() < 3) {
-                    spawnEnemies(true);
-                    Settings.enemyCount++;
-                    spawnEnemies(false);
-                }
-                if (!enemies.isEmpty()) {
-                    if (randomValue.nextBoolean()) {
-                        for (EnemyTank enemy : enemies) {
-                            if (bullets.size() < 1) {
-                                if (noEnemiesOnLine(enemy, enemies))
-                                    for (Player player : players) {
-                                        if (!randomValue.nextBoolean() && !playersOnLine(enemy, player)) {
-                                            spawnBullet(enemy, bullets);
+                    for (Player player : players) {
+                        spawnSecondaryWeaponObjects(player);
+                    }
+                    playerMissileList.forEach(sprite -> sprite.move());
+                    playerMissileList.forEach(sprite -> sprite.updateUI());
+                    playerMissileList.forEach(sprite -> sprite.checkRemovability());
+                    removeSprites(playerMissileList);
+                    // add random enemies
+                    if (Settings.enemyTotal < Settings.enemy && enemies.size() < 3) {
+                        spawnEnemies(true);
+                        Settings.enemyCount++;
+                        spawnEnemies(false);
+                    }
+                    if (!enemies.isEmpty()) {
+                        if (randomValue.nextBoolean()) {
+                            for (EnemyTank enemy : enemies) {
+                                if (bullets.size() < 1) {
+                                    if (noEnemiesOnLine(enemy, enemies))
+                                        for (Player player : players) {
+                                            if (!randomValue.nextBoolean() && !playersOnLine(enemy,
+                                                player)) {
+                                                spawnBullet(enemy, bullets);
+                                            }
                                         }
-                                    }
+                                }
                             }
                         }
                     }
+                    // movement
+                    for (EnemyTank enemy : enemies) {
+                        enemy.chargeChangeMovement();
+                    }
+                    enemies.forEach(sprite -> sprite.move());
+                    bullets.forEach(sprite -> sprite.move());
+                    player1bullets.forEach(sprite -> sprite.move());
+                    player2bullets.forEach(sprite -> sprite.move());
+                    // check collisions
+                    checkCollisions();
+                    // update sprites in scene
+                    for (Player player : players) {
+                        player.updateUI();
+                    }
+                    enemies.forEach(sprite -> sprite.updateUI());
+                    bullets.forEach(sprite -> sprite.updateUI());
+                    player1bullets.forEach(sprite -> sprite.updateUI());
+                    player2bullets.forEach(sprite -> sprite.updateUI());
+                    // check if sprite can be removed
+                    enemies.forEach(sprite -> sprite.checkRemovability());
+                    bullets.forEach(sprite -> sprite.checkRemovability());
+                    for (Player player : players) {
+                        player.checkRemovability();
+                    }
+                    player1bullets.forEach(sprite -> sprite.checkRemovability());
+                    player2bullets.forEach(sprite -> sprite.checkRemovability());
+                    // remove removables from list, layer, etc
+                    removeSprites(enemies);
+                    removeSprites(bullets);
+                    removeSprites(player1bullets);
+                    removeSprites(player2bullets);
+                    removeSprites(players);
+                    // update score, health, etc
+                    updateScore();
+                    //saveGameState
+                    gameRepeatSave();
                 }
-                // movement
-                for (EnemyTank enemy : enemies) {
-                    enemy.chargeChangeMovement();
-                }
-                enemies.forEach(sprite -> sprite.move());
-                bullets.forEach(sprite -> sprite.move());
-                player1bullets.forEach(sprite -> sprite.move());
-                player2bullets.forEach(sprite -> sprite.move());
-                // check collisions
-                checkCollisions();
-                // update sprites in scene
-                for (Player player : players) {
-                    player.updateUI();
-                }
-                enemies.forEach(sprite -> sprite.updateUI());
-                bullets.forEach(sprite -> sprite.updateUI());
-                player1bullets.forEach(sprite -> sprite.updateUI());
-                player2bullets.forEach(sprite -> sprite.updateUI());
-                // check if sprite can be removed
-                enemies.forEach(sprite -> sprite.checkRemovability());
-                bullets.forEach(sprite -> sprite.checkRemovability());
-                for (Player player : players) {
-                    player.checkRemovability();
-                }
-                player1bullets.forEach(sprite -> sprite.checkRemovability());
-                player2bullets.forEach(sprite -> sprite.checkRemovability());
-                // remove removables from list, layer, etc
-                removeSprites(enemies);
-                removeSprites(bullets);
-                removeSprites(player1bullets);
-                removeSprites(player2bullets);
-                removeSprites(players);
-                // update score, health, etc
-                updateScore();
             }
         };
+    }
+
+    class ThreadForReplay extends Thread {
+        private List<Object> currGameState;
+
+        public ThreadForReplay(List<Object> currGameState) {
+            //loadGame();
+            this.currGameState = currGameState;
+        }
+
+        public void run() {
+            int gameStartCounter = 0;
+            int gameEndCounter = gameState.size();
+            for (; gameStartCounter < gameEndCounter; gameStartCounter = gameStartCounter + 24) {
+                playRepeat(gameStartCounter, gameStartCounter + 24, players, enemies, bullets,
+                    player1bullets, player2bullets, playerMissileList);
+                try {
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                for (Player player : players) {
+                    player.imageView.setVisible(false);
+                }
+                for (EnemyTank enemy : enemies) {
+                    enemy.imageView.setVisible(false);
+                }
+                for (Bullet bullet : bullets) {
+                    bullet.imageView.setVisible(false);
+                }
+                for (Bullet player1bullet : player1bullets) {
+                    player1bullet.imageView.setVisible(false);
+                }
+                for (Bullet player2bullet : player2bullets) {
+                    player2bullet.imageView.setVisible(false);
+                }
+                for (Missile playerMissiles : playerMissileList) {
+                    playerMissiles.imageView.setVisible(false);
+                }
+            }
+        }
     }
 
     /**
@@ -362,13 +441,12 @@ public class Main extends Application {
         Settings.BulletsAct = 1;
         Settings.FIRE = true;
         Settings.fontsSize = 24;
+        Settings.saveFirstTime = true;
     }
 
     private EventHandler<KeyEvent> globalKeyEventHandler = new EventHandler<KeyEvent>() {
 
-        @Override
-        public void handle(KeyEvent event) {
-
+        @Override public void handle(KeyEvent event) {
             // toggle pause
             if (event.getCode() == KeyCode.P) {
                 debugLayer.setVisible(!debugLayer.isVisible());
@@ -384,9 +462,263 @@ public class Main extends Application {
             }
             // take screenshot, open save dialog and save it
             else if (event.getCode() == KeyCode.ESCAPE) {
+                Utils.saveGame("objects.dat", players, enemies, bullets, player1bullets,
+                    player2bullets, playerMissileList);
+            } else if (event.getCode() == KeyCode.F1) {
+                load();
             }
+            if (event.getCode() == KeyCode.F2) {
+                Utils.screenshot(scene);
+            }
+            if (event.getCode() == KeyCode.R) {
+                for (Player player : players)
+                    if (player.getPlayerNumber() == 1) {
+                        player.kill();
+                        Settings.player1Lives++;
+                        Settings.player1IsAlive = false;
+                    }
+            }
+
         }
     };
+
+    public void gameRepeatSave() {
+        if (Settings.saveFirstTime) {
+            Utils.saveGame("objectsRepeat.dat", players, enemies, bullets, player1bullets,
+                player2bullets, playerMissileList);
+            Settings.saveFirstTime = false;
+        }
+        Utils.saveRepeat(players, enemies, bullets, player1bullets, player2bullets,
+            playerMissileList);
+    }
+
+    public Pane getPaneLayer() {
+        return playfieldLayer;
+    }
+
+    public void load() {
+        ObjectInputStream in = null;
+        try {
+            in = new ObjectInputStream(new FileInputStream("objects.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        stopGame();
+        loadGame();
+        //Date now = new Date(System.currentTimeMillis());
+        try {
+            players = (List<Player>) in.readObject();
+            for (Player player : players) {
+                player.input = new Input(scene);
+                player.layer = getPaneLayer();
+                player.layer.getChildren().add(player.imageView);
+            }
+            enemies = (List<EnemyTank>) in.readObject();
+            for (EnemyTank enemy : enemies) {
+                enemy.layer = getPaneLayer();
+                enemy.layer.getChildren().add(enemy.imageView);
+            }
+            bullets = (List<Bullet>) in.readObject();
+            player1bullets = (List<Bullet>) in.readObject();
+            player2bullets = (List<Bullet>) in.readObject();
+            playerMissileList = (List<Missile>) in.readObject();
+            Settings.playerShipSpeed = (Double) in.readObject();
+            Settings.playerShipHealth = (Double) in.readObject();
+            Settings.playerMissileSpeed = (Double) in.readObject();
+            Settings.playerMissileHealth = (Double) in.readObject();
+            Settings.player1Lives = (int) in.readObject();
+            Settings.player1IsAlive = (Boolean) in.readObject();
+            Settings.player2Lives = (int) in.readObject();
+            Settings.player2IsAlive = (Boolean) in.readObject();
+            Settings.gamePaused = (Boolean) in.readObject();
+            Settings.player1Score = (int) in.readObject();
+            Settings.player2Score = (int) in.readObject();
+            Settings.automove = (Boolean) in.readObject();
+            Settings.enemy = (int) in.readObject();
+            Settings.enemyCount = (int) in.readObject();
+            Settings.enemyTotal = (int) in.readObject();
+            Settings.BulletsAct = (int) in.readObject();
+            Settings.FIRE = (Boolean) in.readObject();
+            Settings.fontsSize = (int) in.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        try {
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        startGame();
+        System.out.println("loaded single game");
+    }
+
+    public List<Object> loadRepeat(List<Object> gameState) throws IOException {
+        ObjectInputStream in = null;
+        try {
+            in = new ObjectInputStream(new FileInputStream("objectsRepeat.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pauseGame();
+        loadGame();
+        while (true) {
+            try {
+                List<Player> playersL = (List<Player>) in.readObject();
+                for (Player player : playersL) {
+                    player.input = new Input(scene);
+                    player.layer = getPaneLayer();
+                    player.layer.getChildren().add(player.imageView);
+                }
+                List<EnemyTank> enemiesL = (List<EnemyTank>) in.readObject();
+                for (EnemyTank enemy : enemiesL) {
+                    enemy.layer = getPaneLayer();
+                    enemy.layer.getChildren().add(enemy.imageView);
+                }
+                List<Bullet> bulletsL = (List<Bullet>) in.readObject();
+                for (Bullet bullet : bulletsL) {
+                    bullet.layer = getPaneLayer();
+                    bullet.layer.getChildren().add(bullet.imageView);
+                }
+                List<Bullet> player1bulletsL = (List<Bullet>) in.readObject();
+                for (Bullet bullet : player1bulletsL) {
+                    bullet.layer = getPaneLayer();
+                    bullet.layer.getChildren().add(bullet.imageView);
+                }
+                List<Bullet> player2bulletsL = (List<Bullet>) in.readObject();
+                for (Bullet bullet : player2bulletsL) {
+                    bullet.layer = getPaneLayer();
+                    bullet.layer.getChildren().add(bullet.imageView);
+                }
+                List<Missile> playerMissileListL = (List<Missile>) in.readObject();
+                for (Missile missile : playerMissileListL) {
+                    missile.layer = getPaneLayer();
+                    missile.layer.getChildren().add(missile.imageView);
+                }
+                Settings.playerShipSpeed = (Double) in.readObject();
+                Settings.playerShipHealth = (Double) in.readObject();
+                Settings.playerMissileSpeed = (Double) in.readObject();
+                Settings.playerMissileHealth = (Double) in.readObject();
+                Settings.player1Lives = (int) in.readObject();
+                Settings.player1IsAlive = (Boolean) in.readObject();
+                Settings.player2Lives = (int) in.readObject();
+                Settings.player2IsAlive = (Boolean) in.readObject();
+                Settings.gamePaused = (Boolean) in.readObject();
+                Settings.player1Score = (int) in.readObject();
+                Settings.player2Score = (int) in.readObject();
+                Settings.automove = (Boolean) in.readObject();
+                Settings.enemy = (int) in.readObject();
+                Settings.enemyCount = (int) in.readObject();
+                Settings.enemyTotal = (int) in.readObject();
+                Settings.BulletsAct = (int) in.readObject();
+                Settings.FIRE = (Boolean) in.readObject();
+                Settings.fontsSize = (int) in.readObject();
+
+                gameState.add(playersL);
+                gameState.add(enemiesL);
+                gameState.add(bulletsL);
+                gameState.add(player1bulletsL);
+                gameState.add(player2bulletsL);
+                gameState.add(playerMissileListL);
+                gameState.add(Settings.playerShipSpeed);
+                gameState.add(Settings.playerShipHealth);
+                gameState.add(Settings.playerMissileSpeed);
+                gameState.add(Settings.playerMissileHealth);
+                gameState.add(Settings.player1Lives);
+                gameState.add(Settings.player1IsAlive);
+                gameState.add(Settings.player2Lives);
+                gameState.add(Settings.player2IsAlive);
+                gameState.add(Settings.gamePaused);
+                gameState.add(Settings.player1Score);
+                gameState.add(Settings.player2Score);
+                gameState.add(Settings.automove);
+                gameState.add(Settings.enemy);
+                gameState.add(Settings.enemyCount);
+                gameState.add(Settings.enemyTotal);
+                gameState.add(Settings.BulletsAct);
+                gameState.add(Settings.FIRE);
+                gameState.add(Settings.fontsSize);
+            } catch (IOException e) {
+                e.printStackTrace();
+                break;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("loaded repeat state");
+        return gameState;
+    }
+
+    /**
+     * actually play loaded repeat
+     */
+    private void playRepeat(int gameStateCounter, int gameEndCounter, List<Player> players,
+        List<EnemyTank> enemies, List<Bullet> bullets, List<Bullet> player1bullets,
+        List<Bullet> player2bullets, List<Missile> playerMissileList) {
+        for (; gameStateCounter < gameEndCounter; gameStateCounter++) {
+            players = (List<Player>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            enemies = (List<EnemyTank>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            bullets = (List<Bullet>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            player1bullets = (List<Bullet>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            player2bullets = (List<Bullet>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            playerMissileList = (List<Missile>) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.playerShipSpeed = (Double) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.playerShipHealth = (Double) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.playerMissileSpeed = (Double) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.playerMissileHealth = (Double) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player1Lives = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player1IsAlive = (Boolean) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player2Lives = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player2IsAlive = (Boolean) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.gamePaused = (Boolean) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player1Score = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.player2Score = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.automove = (Boolean) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.enemy = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.enemyCount = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.enemyTotal = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.BulletsAct = (int) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.FIRE = (Boolean) gameState.get(gameStateCounter);
+            gameStateCounter++;
+            Settings.fontsSize = (int) gameState.get(gameStateCounter);
+            this.players = players;
+            this.enemies = enemies;
+            this.player1bullets = player1bullets;
+            this.player2bullets = player2bullets;
+            this.bullets = bullets;
+            this.playerMissileList = playerMissileList;
+            players.forEach(sprite -> sprite.updateUI());
+            enemies.forEach(sprite -> sprite.updateUI());
+            bullets.forEach(sprite -> sprite.updateUI());
+            player1bullets.forEach(sprite -> sprite.updateUI());
+            player2bullets.forEach(sprite -> sprite.updateUI());
+            playerMissileList.forEach(sprite -> sprite.updateUI());
+        }
+        Player1Score.setText("END REPEAT");
+    }
 
     /**
      * spawn secondary weapon objects
@@ -448,7 +780,8 @@ public class Main extends Application {
         y = (5 * Player2Score.getBoundsInLocal().getHeight());
         Player2Score.relocate(x, y);
         //block for enemies count
-        TotalEnemies.setText("Enemies To Win:" + String.valueOf((Settings.enemy - Settings.enemyCount)));
+        TotalEnemies
+            .setText("Enemies To Win:" + String.valueOf((Settings.enemy - Settings.enemyCount)));
         y = (4 * TotalEnemies.getBoundsInLocal().getHeight()) / 2;
         TotalEnemies.relocate(x, y);
         Player1Score.setBoundsType(TextBoundsType.VISUAL);
@@ -472,7 +805,9 @@ public class Main extends Application {
             double x = (Settings.SCENE_WIDTH - image.getWidth()) / 2.0;
             double y = Settings.SCENE_HEIGHT * 0.7;
             // create player
-            player = new Player(playfieldLayer, image, x, y, 180, 0, 0, 0, Settings.playerShipHealth, 0, Settings.playerShipSpeed, input);
+            player =
+                new Player(playfieldLayer, image, x, y, 180, 0, 0, 0, Settings.playerShipHealth, 0,
+                    Settings.playerShipSpeed, input);
             player.playerNumber = 1;
             // register player
             Settings.player1Lives--;
@@ -480,8 +815,7 @@ public class Main extends Application {
             players.add(player);
             audio4.play();
         }
-        if (Settings.player2Lives > 0 && !Settings.player2IsAlive)
-        {
+        if (Settings.player2Lives > 0 && !Settings.player2IsAlive) {
             Player player2;
             Input input = new Input(scene);
             input.setupKey(KeyCode.W);
@@ -496,7 +830,8 @@ public class Main extends Application {
             double x = (Settings.SCENE_WIDTH / 2.0) + 40;
             double y = Settings.SCENE_HEIGHT * 0.7;
             // create player
-            player2 = new Player(playfieldLayer, image, x + 20, y - 20, 0, 0, 0, 0, Settings.playerShipHealth, 0, Settings.playerShipSpeed, input);
+            player2 = new Player(playfieldLayer, image, x + 20, y - 20, 0, 0, 0, 0,
+                Settings.playerShipHealth, 0, Settings.playerShipSpeed, input);
             player2.playerNumber = 2;
             // register player
             Settings.player2Lives--;
@@ -527,11 +862,11 @@ public class Main extends Application {
      */
     private void removeSprites(SpriteBase spriteList) {
         if (spriteList.isRemovable()) {
-				try {
-					this.finalize();
-				} catch (Throwable throwable) {
-					throwable.printStackTrace();
-				}
+            try {
+                this.finalize();
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
             // remove from layer
             spriteList.removeFromLayer();
             // remove from list
@@ -604,7 +939,8 @@ public class Main extends Application {
                         player.setRemovable(true);
                         if (player.getPlayerNumber() == 1)
                             Settings.player1IsAlive = false;
-                        else Settings.player2IsAlive = false;
+                        else
+                            Settings.player2IsAlive = false;
                         audio2.play();
                     }
                 }
@@ -759,7 +1095,8 @@ public class Main extends Application {
         }
         for (EnemyTank enemy : enemies) {
             for (Player player : players) {
-                if (!enemy.collidesWith(player) /*&& (!player2.collidesWith(enemy)) &&(!enemy.collidesWith(enemy))*/) {
+                if (!enemy.collidesWith(
+                    player) /*&& (!player2.collidesWith(enemy)) &&(!enemy.collidesWith(enemy))*/) {
                     enemy.canMoveLeft = true;
                     enemy.canMoveUp = true;
                     enemy.canMoveDown = true;
@@ -820,9 +1157,14 @@ public class Main extends Application {
      * update players score
      */
     private void updateScore() {
-        Player1Score.setText("PLAyer 1:" + String.valueOf(Settings.player1Lives) + "\n" + "Score:" + String.valueOf(Settings.player1Score));
-        Player2Score.setText("Player 2:" + String.valueOf(Settings.player2Lives) + "\n" + "Score:" + String.valueOf(Settings.player2Score));
-        TotalEnemies.setText("Enemies to Win:" + String.valueOf(Settings.enemy - Settings.enemyTotal + enemies.size()));
+        Player1Score.setText(
+            "PLAyer 1:" + String.valueOf(Settings.player1Lives) + "\n" + "Score:" + String
+                .valueOf(Settings.player1Score));
+        Player2Score.setText(
+            "Player 2:" + String.valueOf(Settings.player2Lives) + "\n" + "Score:" + String
+                .valueOf(Settings.player2Score));
+        TotalEnemies.setText("Enemies to Win:" + String
+            .valueOf(Settings.enemy - Settings.enemyTotal + enemies.size()));
         for (Player player : players) {
             if (player.playerNumber == 1 && Settings.player1Score >= 1000) {
                 Settings.player1Score = 0;
@@ -839,7 +1181,7 @@ public class Main extends Application {
         for (int x = 0; x < players.size(); x++) {
             if (players.get(x).getPlayerNumber() == 2)
                 break;
-            Level.setText(String.valueOf(players.get(x).speed));
+            Level.setText(String.valueOf(players.get(x).input));
         }
     }
 
@@ -869,13 +1211,14 @@ public class Main extends Application {
         x = image.getWidth();
         y = randomValue.nextDouble() * (Settings.SCENE_HEIGHT - image.getHeight());
         // create a sprite
-        EnemyTank enemy = new EnemyTank(playfieldLayer, image, x, y, 0, 0, speed, 0, 1, Settings.playerShipHealth);
+        EnemyTank enemy = new EnemyTank(playfieldLayer, image, x, y, 0, 0, speed, 0, 1,
+            Settings.playerShipHealth);
         // manage sprite
         Settings.enemyCount++;
         Settings.enemyTotal++;
         enemies.add(enemy);
-//			}
-//		}
+        //			}
+        //		}
     }
 
     /**
@@ -905,7 +1248,9 @@ public class Main extends Application {
             x = spriteList.getCenterX() - 21;
             y = spriteList.getCenterY() - 5;
         }
-        Bullet bullet = new Bullet(playfieldLayer, image, x, y, spriteList.getDirection(), 0, 0, speed, 1, Settings.playerMissileHealth);
+        Bullet bullet =
+            new Bullet(playfieldLayer, image, x, y, spriteList.getDirection(), 0, 0, speed, 1,
+                Settings.playerMissileHealth);
         bulletlist.add(bullet);
     }
 
@@ -980,7 +1325,6 @@ public class Main extends Application {
             }
             break;
         }
-        //resumeGame();
         return result;
     }
 
@@ -988,7 +1332,6 @@ public class Main extends Application {
      * check for players on horizontals and verticals
      */
     private boolean playersOnLine(SpriteBase enemy, Player player1) {
-        //pauseGame();
         double view = enemy.getDirection();
         boolean result = true;
         switch ((int) view) {
