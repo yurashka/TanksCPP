@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_29f080c8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-05-11T19:48:33Z",
+      "side": 1,
+      "message": "there must be what you have done, not just \"lab№\"",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 10
+      },
+      "revId": "b1b911a7513f30aeaee6ced867a57e30f48a2ed9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c9c11456",
+        "filename": "Bullet.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-05-11T19:48:33Z",
+      "side": 1,
+      "message": "I still think that 0 degrees is moving to right side :)",
+      "revId": "b1b911a7513f30aeaee6ced867a57e30f48a2ed9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_49ce2483",
+        "filename": "Input.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-05-11T19:48:33Z",
+      "side": 1,
+      "message": "format code in this file. should be not more that 120 symbols in line",
+      "revId": "b1b911a7513f30aeaee6ced867a57e30f48a2ed9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c9a8f48f",
+        "filename": "Main.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-05-11T19:48:33Z",
+      "side": 1,
+      "message": "Such a big main calss...",
+      "revId": "b1b911a7513f30aeaee6ced867a57e30f48a2ed9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_29c76065",
+        "filename": "Main.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1007635
+      },
+      "writtenOn": "2016-05-11T19:48:33Z",
+      "side": 1,
+      "message": "bad names",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "b1b911a7513f30aeaee6ced867a57e30f48a2ed9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
